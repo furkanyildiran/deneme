@@ -1,0 +1,7 @@
+../Switches/Src/switches.c:11:6:Switches_init	1
+../Switches/Src/switches.c:18:16:read_clock_pin	1
+../Switches/Src/switches.c:22:16:read_data_pin	1
+../Switches/Src/switches.c:26:16:read_button_pin	1
+../Switches/Src/switches.c:30:16:Switches_getButton	1
+../Switches/Src/switches.c:34:6:Switches_calcEncoder	11
+../Switches/Src/switches.c:55:9:Switches_getCounter	1
