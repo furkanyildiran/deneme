@@ -76,13 +76,13 @@ typedef struct{
 item iarr[4]={};
 
 void item0_f(char *title, char line[15]){
-    sprintf(line,"%s %d","item1setted",0);
+    sprintf(line,"%s %d","item0setted",0);
 }
 void item1_f(char *title, char line[15]){
-    sprintf(line,"%s %d","item2setted",1);
+    sprintf(line,"%s %d","item1setted",1);
 }
 void item2_f(char *title, char line[15]){
-    sprintf(line,"%s %d","item3setted",2);
+    sprintf(line,"%s %d","item2setted",2);
 }
 void item3_f(char *title, char line[15]){
     sprintf(line,"%s %d","item3setted",3);
@@ -161,8 +161,6 @@ int main(void)
   iarr[2] = item2;
   iarr[3] = item3;
 
-
-
   content.line0_index=0;
   content.line1_index=1;
   content.sign_index=0;
@@ -181,16 +179,12 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  /*current_counter = Switches_getCounter();
-	  if(current_counter >= 3){
+	  current_counter = Switches_getCounter();
+	  /*if(current_counter >= 3){
 		  Switches_setCounter(3);
 		  current_counter = 3;
-	  }
-	  else if(current_counter <= 0){
-		  Switches_setCounter(0);
-		  current_counter = 0;
 	  }*/
-	  current_counter = Switches_getCounter();
+	  HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);
 	  if(current_counter < 4 && current_counter>=0) {
 		  if(current_counter > previous_counter){
 			  previous_counter = current_counter;
@@ -225,10 +219,13 @@ int main(void)
 			  display_refresh();
 		  }
 	  }
+	  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 	  if((HAL_GetTick() - prev_time) > 2000){
+		  HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);
 		  prev_time = HAL_GetTick();
 		  HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
 		  display_refresh();
+		  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 	  }
   }
   /* USER CODE END 3 */
