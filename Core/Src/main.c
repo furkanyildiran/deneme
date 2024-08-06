@@ -72,8 +72,8 @@ typedef struct{
     char title[10];
     int index;
     func f;
-}item;
-item iarr[4]={};
+}Main_menu_item;
+Main_menu_item main_menu[4]={};
 
 void item0_f(char *title, char line[15]){
     sprintf(line,"%s %d","item0setted",0);
@@ -94,14 +94,15 @@ typedef struct{
     uint8_t sign_index;
     char line0[15];
     char line1[15];
+    int item_num;
 }display_content;
 
 
 display_content content;
 
 void display_refresh(void){
-	iarr[content.line0_index].f(iarr[content.line0_index].title, content.line0);
-	iarr[content.line1_index].f(iarr[content.line1_index].title, content.line1);
+	main_menu[content.line0_index].f(main_menu[content.line0_index].title, content.line0);
+	main_menu[content.line1_index].f(main_menu[content.line1_index].title, content.line1);
 
 	LCD_clear();
 
@@ -113,6 +114,37 @@ void display_refresh(void){
 
 	LCD_set_cursor(1, 0);
 	LCD_write_string(content.line1);
+}
+
+
+Main_menu_item item0={.title="item0", .index=0, .f = item0_f};
+Main_menu_item item1={.title="item1", .index=1, .f = item1_f};
+Main_menu_item item2={.title="item2", .index=2, .f = item2_f};
+Main_menu_item item3={.title="item3", .index=3, .f = item3_f};
+
+/*main_menu[0] = item0;
+main_menu[1] = item1;
+main_menu[2] = item2;
+main_menu[3] = item3;*/
+
+
+
+void main_menu_add_item(Main_menu_item *item){
+	main_menu[content.item_num++] = *item;
+}
+
+void main_menu_init(void){
+	  main_menu_add_item(&item0);
+	  main_menu_add_item(&item1);
+	  main_menu_add_item(&item2);
+	  main_menu_add_item(&item3);
+
+	  content.line0_index=0;
+	  content.line1_index=1;
+	  content.sign_index=0;
+
+	  main_menu[content.line0_index].f(main_menu[content.line0_index].title, content.line0);
+	  main_menu[content.line1_index].f(main_menu[content.line1_index].title, content.line1);
 }
 /* USER CODE END 0 */
 
@@ -152,21 +184,7 @@ int main(void)
   LCD_init();
   LCD_backlight(1); // Turn on backlight
 
-  item item0={.title="item0", .index=0, .f = item0_f};
-  item item1={.title="item1", .index=1, .f = item1_f};
-  item item2={.title="item2", .index=2, .f = item2_f};
-  item item3={.title="item3", .index=3, .f = item3_f};
-  iarr[0] = item0;
-  iarr[1] = item1;
-  iarr[2] = item2;
-  iarr[3] = item3;
-
-  content.line0_index=0;
-  content.line1_index=1;
-  content.sign_index=0;
-
-  iarr[content.line0_index].f(iarr[content.line0_index].title, content.line0);
-  iarr[content.line1_index].f(iarr[content.line1_index].title, content.line1);
+  main_menu_init();
 
   SysTick_Config(SystemCoreClock/1000);
   uint32_t prev_time = 0;
@@ -179,53 +197,49 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	  Switches_calcEncoder();
 	  current_counter = Switches_getCounter();
-	  /*if(current_counter >= 3){
+	  if(current_counter > 3){
 		  Switches_setCounter(3);
 		  current_counter = 3;
-	  }*/
-	  HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);
-	  if(current_counter < 4 && current_counter>=0) {
-		  if(current_counter > previous_counter){
-			  previous_counter = current_counter;
-
-			  trigger++;
-			  if(trigger > head){
-				  head++;
-				  tail++;
-				  content.line0_index = content.line1_index;
-				  content.line1_index = head;
-			  }
-			  if(content.sign_index == 0)
-				  content.sign_index=1;
-
-			  display_refresh();
-		  }
-
-		  else if(current_counter < previous_counter){
-
-			  previous_counter = current_counter;
-
-			  trigger--;
-			  if(trigger < tail){
-				  tail--;
-				  head--;
-				  content.line1_index = content.line0_index;
-				  content.line0_index = tail;
-			  }
-			  if(content.sign_index == 1)
-				  content.sign_index = 0;
-
-			  display_refresh();
-		  }
 	  }
-	  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+	  else if(current_counter > previous_counter){
+		  previous_counter = current_counter;
+
+		  trigger++;
+		  if(trigger > head){
+			  head++;
+			  tail++;
+			  content.line0_index = content.line1_index;
+			  content.line1_index = head;
+		  }
+		  if(content.sign_index == 0)
+			  content.sign_index=1;
+		  display_refresh();
+	  }
+	  else if(current_counter < previous_counter){
+
+		  previous_counter = current_counter;
+
+		  trigger--;
+		  if(trigger < tail){
+			  tail--;
+			  head--;
+			  content.line1_index = content.line0_index;
+			  content.line0_index = tail;
+		  }
+		  if(content.sign_index == 1)
+			  content.sign_index = 0;
+		  display_refresh();
+	  }
+
+
 	  if((HAL_GetTick() - prev_time) > 2000){
-		  HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);
+
 		  prev_time = HAL_GetTick();
 		  HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
 		  display_refresh();
-		  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+
 	  }
   }
   /* USER CODE END 3 */
@@ -360,21 +374,11 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : BUTTON_Pin DATA_Pin */
-  GPIO_InitStruct.Pin = BUTTON_Pin|DATA_Pin;
+  /*Configure GPIO pins : BUTTON_Pin DATA_Pin CLOCK_Pin */
+  GPIO_InitStruct.Pin = BUTTON_Pin|DATA_Pin|CLOCK_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : CLOCK_Pin */
-  GPIO_InitStruct.Pin = CLOCK_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(CLOCK_GPIO_Port, &GPIO_InitStruct);
-
-  /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */

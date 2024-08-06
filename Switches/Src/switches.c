@@ -6,7 +6,7 @@ Switch_State_t read_button_pin(void);
 
 uint8_t arr[2] = {0};
 uint8_t complate_flag = 0, order = 0;
-volatile int8_t counter = 0, main_menu_counter = 0;;
+int8_t counter = 0;
 
 void Switches_init(void){
 	arr[0] = arr[1] = 0;
@@ -53,13 +53,8 @@ void Switches_calcEncoder(void){
 		}
 	}
 }
-
 uint8_t Switches_getCounter(void){
-	uint8_t atomic_counter = 0;
-	HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);
-	atomic_counter = (uint8_t)counter;
-	HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
-	return atomic_counter;
+	return (uint8_t)counter;;
 }
 
 void Switches_setCounter(uint8_t counter_val){

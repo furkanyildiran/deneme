@@ -63,7 +63,6 @@ void Error_Handler(void);
 #define DATA_GPIO_Port GPIOB
 #define CLOCK_Pin GPIO_PIN_14
 #define CLOCK_GPIO_Port GPIOB
-#define CLOCK_EXTI_IRQn EXTI15_10_IRQn
 
 /* USER CODE BEGIN Private defines */
 
