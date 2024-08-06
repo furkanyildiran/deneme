@@ -26,6 +26,7 @@ typedef enum{
 
 void Switches_init(void);
 uint8_t Switches_getCounter(void);
+void Switches_setCounter(uint8_t counter_val);
 Switch_State_t Switches_getButton(void);
 void Switches_calcEncoder(void);
 

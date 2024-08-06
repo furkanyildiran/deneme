@@ -63,69 +63,57 @@ static void MX_I2C1_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-//SWITCH B12
-//DATA   B13
-//CLK    B14
-
-
-
 uint8_t current_counter = 0, previous_counter = 0;
-uint8_t sign_position = 0;
-uint8_t full_menu[4] = {0,1,2,3};
-uint8_t current_menu[2] = {0,1};
-uint8_t full_menu_num = 3;
-uint8_t last_menu_position = 1;
-char buff[4]={"\0"};
+uint8_t head = 1, tail = 0, trigger = 0;
 
-typedef enum{
-	Main_menu_pos,
-	Cell_num_menu_pos,
-	Cell_volt_menu_pos
-}menu_positions_t;
+typedef void(*func)(char *title, char line[15]);
 
-char *menu_titles[4]={
-		"PackageV:",
-		"CellV:",
-		"Cell Number:",
-		"Cell Voltage:"
-};
+typedef struct{
+    char title[10];
+    int index;
+    func f;
+}item;
+item iarr[4]={};
 
-
-
-typedef struct {
-	float pack_voltage;
-	float pack_per_cell_voltage;
-	uint8_t sel_cell_number;
-	float sel_cell_voltage;
-	uint8_t position;
-}menu_values_t, *menu_values_ptr_t;
-
-void draw_menu(menu_values_ptr_t ptr){
-	LCD_clear();
-	if(ptr->position <= 2){
-		LCD_set_cursor(0, 0);
-		LCD_write_string(menu_titles[0]);
-		LCD_set_cursor(1, 0);
-		LCD_write_string(menu_titles[1]);
-		LCD_set_cursor(ptr->position, 15);
-		LCD_write_string("<");
-	}else if(ptr->position >=2 && ptr->position < 3){
-		LCD_set_cursor(0, 0);
-		LCD_write_string(menu_titles[1]);
-		LCD_set_cursor(1, 0);
-		LCD_write_string(menu_titles[2]);
-		LCD_set_cursor(1, 15);
-		LCD_write_string("<");
-	}else{
-		LCD_set_cursor(0, 0);
-		LCD_write_string(menu_titles[2]);
-		LCD_set_cursor(1, 0);
-		LCD_write_string(menu_titles[3]);
-		LCD_set_cursor(1, 15);
-		LCD_write_string("<");
-	}
+void item0_f(char *title, char line[15]){
+    sprintf(line,"%s %d","item1setted",0);
 }
-uint8_t index_arr[2]={0,1};
+void item1_f(char *title, char line[15]){
+    sprintf(line,"%s %d","item2setted",1);
+}
+void item2_f(char *title, char line[15]){
+    sprintf(line,"%s %d","item3setted",2);
+}
+void item3_f(char *title, char line[15]){
+    sprintf(line,"%s %d","item3setted",3);
+}
+
+typedef struct{
+    uint8_t line0_index;
+    uint8_t line1_index;
+    uint8_t sign_index;
+    char line0[15];
+    char line1[15];
+}display_content;
+
+
+display_content content;
+
+void display_refresh(void){
+	iarr[content.line0_index].f(iarr[content.line0_index].title, content.line0);
+	iarr[content.line1_index].f(iarr[content.line1_index].title, content.line1);
+
+	LCD_clear();
+
+	LCD_set_cursor(content.sign_index, 15);
+	LCD_write_string("<");
+
+	LCD_set_cursor(0, 0);
+	LCD_write_string(content.line0);
+
+	LCD_set_cursor(1, 0);
+	LCD_write_string(content.line1);
+}
 /* USER CODE END 0 */
 
 /**
@@ -160,17 +148,30 @@ int main(void)
   MX_USART2_UART_Init();
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
+
   LCD_init();
   LCD_backlight(1); // Turn on backlight
-  menu_values_t menu_values;
-  char line0[16];
 
-  LCD_set_cursor(0, 0);
-  LCD_write_string("0");
-  LCD_set_cursor(0, 15);
-  LCD_write_string("<");
-  LCD_set_cursor(1, 0);
-  LCD_write_string("1");
+  item item0={.title="item0", .index=0, .f = item0_f};
+  item item1={.title="item1", .index=1, .f = item1_f};
+  item item2={.title="item2", .index=2, .f = item2_f};
+  item item3={.title="item3", .index=3, .f = item3_f};
+  iarr[0] = item0;
+  iarr[1] = item1;
+  iarr[2] = item2;
+  iarr[3] = item3;
+
+
+
+  content.line0_index=0;
+  content.line1_index=1;
+  content.sign_index=0;
+
+  iarr[content.line0_index].f(iarr[content.line0_index].title, content.line0);
+  iarr[content.line1_index].f(iarr[content.line1_index].title, content.line1);
+
+  SysTick_Config(SystemCoreClock/1000);
+  uint32_t prev_time = 0;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -180,131 +181,55 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	  /*current_counter = Switches_getCounter();
+	  if(current_counter >= 3){
+		  Switches_setCounter(3);
+		  current_counter = 3;
+	  }
+	  else if(current_counter <= 0){
+		  Switches_setCounter(0);
+		  current_counter = 0;
+	  }*/
 	  current_counter = Switches_getCounter();
-	  if(current_counter > 3) current_counter = 3;
-	  if(current_counter > 200) current_counter = 0;
+	  if(current_counter < 4 && current_counter>=0) {
+		  if(current_counter > previous_counter){
+			  previous_counter = current_counter;
 
-	  if(current_counter > previous_counter){
-		  previous_counter = current_counter;
-		  if(sign_position!=1){
-			  sign_position++;
-		  }else if(last_menu_position != full_menu_num){
-			  last_menu_position++;
-			  current_menu[0] = current_menu[1];
-			  current_menu[1] = full_menu[last_menu_position];
+			  trigger++;
+			  if(trigger > head){
+				  head++;
+				  tail++;
+				  content.line0_index = content.line1_index;
+				  content.line1_index = head;
+			  }
+			  if(content.sign_index == 0)
+				  content.sign_index=1;
+
+			  display_refresh();
 		  }
 
+		  else if(current_counter < previous_counter){
 
+			  previous_counter = current_counter;
 
-		  LCD_clear();
-		  LCD_set_cursor(sign_position, 15);
-		  LCD_write_string("<");
+			  trigger--;
+			  if(trigger < tail){
+				  tail--;
+				  head--;
+				  content.line1_index = content.line0_index;
+				  content.line0_index = tail;
+			  }
+			  if(content.sign_index == 1)
+				  content.sign_index = 0;
 
-		  LCD_set_cursor(sign_position, 7);
-		  sprintf(buff,"%d", last_menu_position);
-		  LCD_write_string(buff);
-
-		  LCD_set_cursor(0, 0);
-		  sprintf(buff,"%d",current_menu[0]);
-		  LCD_write_string(buff);
-
-		  LCD_set_cursor(1, 0);
-		  sprintf(buff,"%d",current_menu[1]);
-		  LCD_write_string(buff);
-
-	  }else if(current_counter < previous_counter){
-
-		  previous_counter = current_counter;
-		  if(sign_position!=0){
-			  sign_position--;
-			  last_menu_position--;
-		  }else if(last_menu_position != 0){
-			  last_menu_position--;
-			  current_menu[1] = current_menu[0];
-			  current_menu[0] = full_menu[last_menu_position];
-		  }
-
-		  LCD_clear();
-		  LCD_set_cursor(sign_position, 15);
-		  LCD_write_string("<");
-
-		  LCD_set_cursor(sign_position, 7);
-		  sprintf(buff,"%d", last_menu_position);
-		  LCD_write_string(buff);
-
-		  LCD_set_cursor(0, 0);
-		  sprintf(buff,"%d",current_menu[0]);
-		  LCD_write_string(buff);
-
-		  LCD_set_cursor(1, 0);
-		  sprintf(buff,"%d",current_menu[1]);
-		  LCD_write_string(buff);
-		  if(last_menu_position == 0){
-			  last_menu_position = 1;
-			  current_counter = 0;
-			  previous_counter = 0;
+			  display_refresh();
 		  }
 	  }
-
-
-	  /*if(c != p){
-		  if(c > 3) c = 3;
-		  if(c > 250) c = 0;
-		  if(c <= 3) LCD_clear();
-		  if(c == 0){
-			  LCD_set_cursor(0, 0);
-			  LCD_write_string(menu_titles[0]);
-			  LCD_set_cursor(0, 15);
-			  LCD_write_string("<");
-			  LCD_set_cursor(1, 0);
-			  LCD_write_string(menu_titles[1]);
-		  }
-		  if(c == 3){
-			  LCD_set_cursor(0, 0);
-			   LCD_write_string(menu_titles[2]);
-			  LCD_set_cursor(1, 15);
-			  LCD_write_string("<");
-			  LCD_set_cursor(1, 0);
-			  LCD_write_string(menu_titles[3]);
-		  }
-		  if(c > p && c == 1){
-			  LCD_set_cursor(0, 0);
-			  LCD_write_string(menu_titles[0]);
-			  LCD_set_cursor(1, 15);
-			  LCD_write_string("<");
-			  LCD_set_cursor(1, 0);
-			  LCD_write_string(menu_titles[1]);
-		  }
-		  if(c > p && c == 2){
-			  LCD_set_cursor(0, 0);
-			  LCD_write_string(menu_titles[1]);
-			  LCD_set_cursor(1, 15);
-			  LCD_write_string("<");
-			  LCD_set_cursor(1, 0);
-			  LCD_write_string(menu_titles[2]);
-		  }
-
-
-		  if(c < p && c == 1){
-			  LCD_set_cursor(0, 0);
-			  LCD_write_string(menu_titles[1]);
-			  LCD_set_cursor(0, 15);
-			  LCD_write_string("<");
-			  LCD_set_cursor(1, 0);
-			  LCD_write_string(menu_titles[2]);
-		  }
-
-		  if(c < p && c == 2){
-		  	LCD_set_cursor(0, 0);
-		  	LCD_write_string(menu_titles[2]);
-		  	LCD_set_cursor(0, 15);
-		  	LCD_write_string("<");
-		  	LCD_set_cursor(1, 0);
-		  	LCD_write_string(menu_titles[3]);
-		  }
-		  p = c;
-	  }*/
-
+	  if((HAL_GetTick() - prev_time) > 2000){
+		  prev_time = HAL_GetTick();
+		  HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+		  display_refresh();
+	  }
   }
   /* USER CODE END 3 */
 }

@@ -55,3 +55,7 @@ void Switches_calcEncoder(void){
 uint8_t Switches_getCounter(void){
 	return (uint8_t)counter;
 }
+
+void Switches_setCounter(uint8_t counter_val){
+	counter = counter_val;
+}
